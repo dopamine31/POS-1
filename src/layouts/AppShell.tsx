@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
-  BarChart3, ClipboardList, Download, LayoutDashboard, Menu, Moon, Package, Palette, ReceiptText, Settings, ShoppingCart, Sun, Wifi, WifiOff,
+  BarChart3, ClipboardList, Download, LayoutDashboard, Menu, Moon, Package, Palette, ReceiptText, Settings, ShoppingCart, Sun, Wifi, WifiOff, RefreshCw,
 } from "lucide-react";
 import { useApp } from "@/hooks/useApp";
 import { useOnline } from "@/hooks/useOnline";
+import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { Modal } from "@/components/ui";
 
 const NAV = [
@@ -49,6 +50,14 @@ function Selectors({ compact = false }: { compact?: boolean }) {
 
 export function OnlineBadge() {
   const online = useOnline();
+  const sync = useSyncStatus();
+  const last = sync.lastOk ? new Date(sync.lastOk).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : null;
+  if (online && sync.state === "syncing")
+    return <span className="badge badge-ok" title="Menyinkron dengan server"><RefreshCw size={12} className="animate-spin" /> Menyinkron…</span>;
+  if (online && sync.state === "error")
+    return <span className="badge badge-warn" title={"Sinkronisasi gagal: " + (sync.error ?? "") + ". Data tetap aman di perangkat dan dicoba lagi otomatis."}><RefreshCw size={12} /> Sync gagal</span>;
+  if (online && sync.state === "ok")
+    return <span className="badge badge-ok" title={"Tersinkron" + (last ? " pukul " + last : "")}><Wifi size={12} /> Tersinkron</span>;
   return online ? (
     <span className="badge badge-ok" title="Online"><Wifi size={12} /> Online</span>
   ) : (

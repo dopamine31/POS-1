@@ -1,5 +1,6 @@
 import { db, getKV, setKV, syncState } from "./db";
 import { supabase, supabaseReady } from "./supabase";
+import { setSyncStatus } from "./syncStatus";
 
 export const SYNC_TABLES = ["stores", "cashiers", "categories", "products", "transactions", "held", "templates"] as const;
 
@@ -124,11 +125,16 @@ export async function syncNow(): Promise<{ pushed: number; pulled: number } | nu
   const { data } = await supabase.auth.getSession();
   if (!data.session) return null;
   running = true;
+  setSyncStatus({ state: "syncing" });
   try {
     if (!(await getKV<boolean>("syncInit", false))) await firstSync();
     const pushed = await pushChanges();
     const pulled = await pullChanges();
+    setSyncStatus({ state: "ok", lastOk: Date.now(), error: null });
     return { pushed, pulled };
+  } catch (e) {
+    setSyncStatus({ state: "error", error: e instanceof Error ? e.message : String(e) });
+    throw e;
   } finally {
     running = false;
   }
