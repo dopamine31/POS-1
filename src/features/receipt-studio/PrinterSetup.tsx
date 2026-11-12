@@ -101,6 +101,13 @@ export function PrinterSetup() {
             <select className="input" value={p.density} onChange={(e) => set({ density: Number(e.target.value) as 0 | 1 | 2 })}><option value={0}>Ringan</option><option value={1}>Normal</option><option value={2}>Gelap</option></select>
           </Field>
         </div>
+        <Field label="Mode cetak (Bluetooth / USB)" hint="Teks = cepat, memakai font bawaan printer. Bitmap = seluruh struk digambar, font bebas, lebih lambat lewat BLE.">
+          <div className="grid grid-cols-2 gap-2">
+            {([["text", "Teks (ESC/POS)"], ["bitmap", "Bitmap (font bebas)"]] as const).map(([m, l]) => (
+              <button key={m} className="chip justify-center" data-active={(p.printMode ?? "text") === m} onClick={() => set({ printMode: m })}>{l}</button>
+            ))}
+          </div>
+        </Field>
         <Toggle checked={p.autoCut} onChange={(v) => set({ autoCut: v })} label="Potong kertas otomatis" hint="Hanya printer dengan auto-cutter." />
         <Toggle checked={p.openDrawer} onChange={(v) => set({ openDrawer: v })} label="Buka laci kas" hint="Mengirim pulsa ESC p (jika laci terhubung ke printer)." />
       </section>

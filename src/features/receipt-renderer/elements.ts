@@ -31,6 +31,7 @@ export const ELEMENT_LABEL: Record<ElementType, string> = {
   thanks: "Pesan terima kasih",
   signature: "Tanda tangan",
   spacer: "Spasi",
+  split: "Baris 2 kolom (kiri-kanan)",
 };
 
 const DEFAULT_LABEL: Partial<Record<ElementType, string>> = {
@@ -84,6 +85,10 @@ export function defaultElement(type: ElementType, o: Partial<TemplateElement> = 
     barcodeHeight: 48,
     qrSize: 110,
     logoSize: 64,
+    leftSource: "date",
+    rightSource: "time",
+    leftText: "",
+    rightText: "",
     big: false,
   };
   const per: Partial<Record<ElementType, Partial<TemplateElement>>> = {
@@ -100,6 +105,7 @@ export function defaultElement(type: ElementType, o: Partial<TemplateElement> = 
     total: { weight: 700, size: 14, big: true },
     spacer: { marginTop: 8 },
     signature: { align: "center", size: 11 },
+    split: { size: 11, showLabel: false },
   };
   return { ...base, ...per[type], ...o };
 }
@@ -112,7 +118,7 @@ export function newElement(type: ElementType): TemplateElement {
 export const ADDABLE_ELEMENTS: ElementType[] = [
   "logo", "storeName", "storeAddress", "storePhone", "title", "receiptNo", "date", "time", "cashier", "customer",
   "items", "subtotal", "discount", "tax", "fee", "total", "payment", "cashReceived", "change", "balance",
-  "barcode", "qr", "text", "note", "divider", "footer", "thanks", "signature", "spacer",
+  "barcode", "qr", "text", "note", "divider", "footer", "thanks", "signature", "spacer", "split",
 ];
 
 export const PAPER_MM: Record<string, number> = { "58": 58, "80": 80, a4: 210 };

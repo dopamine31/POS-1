@@ -25,6 +25,8 @@ export interface PrinterSettings {
   autoCut: boolean;
   openDrawer: boolean;
   deviceName?: string;
+  /** text = perintah teks ESC/POS (font bawaan printer); bitmap = seluruh struk digambar sebagai gambar (font bebas). Kosong = text. */
+  printMode?: "text" | "bitmap";
 }
 
 export interface Store {
@@ -197,10 +199,16 @@ export type ElementType =
   | "footer"
   | "thanks"
   | "signature"
-  | "spacer";
+  | "spacer"
+  | "split";
 
-export type FontFamily = "mono" | "sans" | "serif";
+export type FontFamily =
+  | "mono" | "sans" | "serif"
+  | "courier-new" | "consolas" | "roboto-mono" | "liberation-mono" | "dejavu-mono" | "ibm-plex-mono" | "jetbrains-mono" | "inconsolata"
+  | "arial" | "roboto" | "tahoma" | "verdana" | "open-sans" | "inter"
+  | "vt323" | "share-tech-mono";
 export type DividerStyle = "dashed" | "dotted" | "solid" | "double" | "stars" | "equals" | "thick";
+export type SplitSource = "date" | "time" | "datetime" | "cashier" | "receiptNo" | "customer" | "text";
 export type ItemLayout = "stacked" | "inline" | "table" | "compact" | "detailed";
 export type BorderStyle = "none" | "solid" | "dashed" | "dotted" | "double";
 
@@ -235,6 +243,16 @@ export interface TemplateElement {
   barcodeHeight: number;
   qrSize: number;
   logoSize: number;
+  /** elemen "split": isi sisi kiri/kanan dalam satu baris */
+  leftSource?: SplitSource;
+  rightSource?: SplitSource;
+  leftText?: string;
+  rightText?: string;
+  /** baris nominal: simbol mata uang (Rp) di kolom tetap, angka rata kanan */
+  alignCurrency?: boolean;
+  /** elemen items: tampilkan simbol mata uang di harga satuan / jumlah */
+  itemCurUnit?: boolean;
+  itemCurTotal?: boolean;
   /** teks 2x pada printer thermal */
   big: boolean;
 }

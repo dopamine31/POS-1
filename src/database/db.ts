@@ -64,6 +64,7 @@ export const DEFAULT_PRINTER: PrinterSettings = {
   density: 1,
   autoCut: false,
   openDrawer: false,
+  printMode: "text",
 };
 
 export function newStore(name = "Toko Saya"): Store {

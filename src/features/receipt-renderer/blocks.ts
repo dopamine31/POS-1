@@ -1,4 +1,4 @@
-import type { ReceiptData, ReceiptTemplate, TemplateElement } from "@/types";
+import type { ReceiptData, ReceiptTemplate, SplitSource, TemplateElement } from "@/types";
 import { formatMoney, formatNumber } from "@/utils/money";
 import { fmtDate, fmtTime } from "@/utils/helpers";
 import { PAYMENT_LABEL } from "@/utils/payment";
@@ -16,7 +16,7 @@ export interface ItemRow {
 export type Block =
   | { kind: "text"; el: TemplateElement; lines: string[] }
   | { kind: "pair"; el: TemplateElement; label: string; value: string }
-  | { kind: "row"; el: TemplateElement; label: string; value: string }
+  | { kind: "row"; el: TemplateElement; label: string; value: string; cur?: string; numChars?: number }
   | { kind: "items"; el: TemplateElement; rows: ItemRow[]; hasPrice: boolean }
   | { kind: "divider"; el: TemplateElement }
   | { kind: "qr"; el: TemplateElement; value: string }
@@ -26,6 +26,47 @@ export type Block =
   | { kind: "signature"; el: TemplateElement; label: string };
 
 const split = (s: string) => s.split("\n").map((x) => x.trimEnd());
+
+const SPLIT_LABEL: Record<SplitSource, string> = {
+  date: "Tanggal",
+  time: "Jam",
+  datetime: "Waktu",
+  cashier: "Kasir",
+  receiptNo: "No",
+  customer: "Pelanggan",
+  text: "",
+};
+
+/** Nilai satu sisi elemen "split" (kiri/kanan). */
+function splitValue(src: SplitSource | undefined, custom: string | undefined, d: ReceiptData, withLabel: boolean): string {
+  let v = "";
+  switch (src) {
+    case "date":
+      v = fmtDate(d.createdAt);
+      break;
+    case "time":
+      v = fmtTime(d.createdAt);
+      break;
+    case "datetime":
+      v = `${fmtDate(d.createdAt)} ${fmtTime(d.createdAt)}`;
+      break;
+    case "cashier":
+      v = d.cashier ?? "";
+      break;
+    case "receiptNo":
+      v = d.number;
+      break;
+    case "customer":
+      v = d.customer ?? "";
+      break;
+    case "text":
+      return (custom ?? "").trim();
+    default:
+      return "";
+  }
+  const lab = SPLIT_LABEL[src as SplitSource];
+  return v && withLabel && lab ? `${lab}: ${v}` : v;
+}
 
 /**
  * Satu-satunya tempat logika "data → konten" untuk semua renderer
@@ -78,8 +119,8 @@ export function buildBlocks(tpl: ReceiptTemplate, d: ReceiptData): Block[] {
           name: i.name,
           code: el.showCode ? i.sku : "",
           qty: i.qty,
-          unit: packing || !el.showUnitPrice ? "" : formatNumber(i.price, cur),
-          total: packing ? "" : formatNumber(i.total, cur),
+          unit: packing || !el.showUnitPrice ? "" : el.itemCurUnit ? money(i.price) : formatNumber(i.price, cur),
+          total: packing ? "" : el.itemCurTotal ? money(i.total) : formatNumber(i.total, cur),
           note: el.showNote ? i.note ?? "" : "",
         }));
         out.push({ kind: "items", el, rows, hasPrice: !packing });
@@ -145,7 +186,26 @@ export function buildBlocks(tpl: ReceiptTemplate, d: ReceiptData): Block[] {
       case "spacer":
         out.push({ kind: "spacer", el });
         break;
+      case "split": {
+        const l = splitValue(el.leftSource, el.leftText, d, el.showLabel);
+        const r = splitValue(el.rightSource, el.rightText, d, el.showLabel);
+        if (l || r) out.push({ kind: "row", el, label: l, value: r });
+        break;
+      }
     }
+  }
+  // opsi "sejajarkan simbol": pisahkan simbol mata uang dari angka pada baris nominal
+  const sym = cur.symbol;
+  if (sym) {
+    const mapped = out.map((b) => {
+      if (b.kind !== "row" || !b.el.alignCurrency || b.el.type === "split") return b;
+      const tag = sym + " ";
+      const i = b.value.indexOf(tag);
+      if (i < 0) return b;
+      return { ...b, cur: sym, value: b.value.slice(0, i) + b.value.slice(i + tag.length) };
+    });
+    const w = Math.max(0, ...mapped.map((b) => (b.kind === "row" && b.cur ? b.value.length : 0)));
+    return mapped.map((b) => (b.kind === "row" && b.cur ? { ...b, numChars: w } : b));
   }
   return out;
 }

@@ -5,20 +5,15 @@ import { memo, useMemo, type CSSProperties, type ReactNode } from "react";
 import type { ReceiptData, ReceiptTemplate, TemplateElement } from "@/types";
 import { buildBlocks, type Block, type ItemRow } from "./blocks";
 import { paperWidthMm } from "./elements";
+import { fontCss } from "./fonts";
 import { BarcodeSvg, QrSvg } from "@/features/barcode/BarcodeViews";
-
-const FONT: Record<string, string> = {
-  mono: '"Courier New", ui-monospace, "SF Mono", Menlo, Consolas, monospace',
-  sans: 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
-  serif: 'Georgia, "Times New Roman", serif',
-};
 
 const DIV_CHAR: Record<string, string> = { stars: "*", equals: "=" };
 
 function elStyle(el: TemplateElement): CSSProperties {
   const w = el.widthPct;
   const s: CSSProperties = {
-    fontFamily: FONT[el.font],
+    fontFamily: fontCss(el.font),
     fontSize: el.size,
     fontWeight: el.weight,
     fontStyle: el.italic ? "italic" : "normal",
@@ -56,6 +51,7 @@ function Rule({ el }: { el: TemplateElement }) {
   return <div style={{ ...st, padding: 0, borderTop: map[el.dividerStyle], height: 0, fontSize: 0 }} aria-hidden />;
 }
 
+// NOWRAP_ITEMS: kolom nominal tidak boleh terpecah ke dua baris
 function Items({ el, rows, hasPrice }: { el: TemplateElement; rows: ItemRow[]; hasPrice: boolean }) {
   const st = elStyle(el);
   const qtyUnit = (r: ItemRow) => `${r.qty}${r.unit ? ` x ${r.unit}` : ""}`;
@@ -108,8 +104,8 @@ function Items({ el, rows, hasPrice }: { el: TemplateElement; rows: ItemRow[]; h
                   {noteLine(r)}
                 </td>
                 {el.showQty && <td style={{ textAlign: "center" }}>{r.qty}</td>}
-                {hasPrice && el.showUnitPrice && <td style={{ textAlign: "right" }}>{r.unit}</td>}
-                {hasPrice && <td style={{ textAlign: "right" }}>{r.total}</td>}
+                {hasPrice && el.showUnitPrice && <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{r.unit}</td>}
+                {hasPrice && <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{r.total}</td>}
               </tr>
             ))}
           </tbody>
@@ -128,7 +124,7 @@ function Items({ el, rows, hasPrice }: { el: TemplateElement; rows: ItemRow[]; h
               {el.showQty && <>Qty {r.qty}</>}
               {hasPrice && el.showUnitPrice && <> × {r.unit}</>}
             </span>
-            {hasPrice && <b>{r.total}</b>}
+            {hasPrice && <b style={{ whiteSpace: "nowrap" }}>{r.total}</b>}
           </div>
           {noteLine(r)}
         </div>
@@ -143,7 +139,7 @@ function Items({ el, rows, hasPrice }: { el: TemplateElement; rows: ItemRow[]; h
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>{el.showQty && qtyUnit(r)}</span>
-            {hasPrice && <span>{r.total}</span>}
+            {hasPrice && <span style={{ whiteSpace: "nowrap" }}>{r.total}</span>}
           </div>
           {noteLine(r)}
         </div>
@@ -176,7 +172,14 @@ function BlockView({ b }: { b: Block }) {
       return (
         <div style={{ ...st, display: "flex", justifyContent: "space-between", gap: 8, textAlign: "left" }}>
           <span>{b.label}</span>
-          <span style={{ whiteSpace: "nowrap" }}>{b.value}</span>
+          {b.cur ? (
+            <span style={{ whiteSpace: "nowrap", display: "inline-flex", justifyContent: "space-between", width: `${(b.numChars ?? b.value.length) + b.cur.length + 1}ch`, fontVariantNumeric: "tabular-nums" }}>
+              <span>{b.cur}</span>
+              <span>{b.value}</span>
+            </span>
+          ) : (
+            <span style={{ whiteSpace: "nowrap" }}>{b.value}</span>
+          )}
         </div>
       );
     case "items":
@@ -229,7 +232,7 @@ function ReceiptViewBase({ template, data, widthMm, marginMm = 3, className }: R
   const blocks = useMemo(() => buildBlocks(template, data), [template, data]);
   const w = widthMm ?? paperWidthMm(template.paper);
   return (
-    <div className={`receipt-paper ${className ?? ""}`} style={{ width: `${w}mm`, padding: `${marginMm}mm`, fontFamily: FONT.mono, color: "#000", background: "#fff" }} data-testid="receipt-paper">
+    <div className={`receipt-paper ${className ?? ""}`} style={{ width: `${w}mm`, padding: `${marginMm}mm`, fontFamily: fontCss("mono"), color: "#000", background: "#fff" }} data-testid="receipt-paper">
       {blocks.map((b, i) => (
         <BlockView key={b.el.id + i} b={b} />
       ))}

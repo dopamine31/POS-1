@@ -103,7 +103,9 @@ function itemLines(rows: ItemRow[], layout: string, width: number, showQty: bool
 /** Layout berbasis kolom karakter — dasar untuk ESC/POS, PDF, gambar & teks WhatsApp. */
 export function layoutReceipt(tpl: ReceiptTemplate, data: ReceiptData, cols: number): Line[] {
   const lines: Line[] = [];
-  for (const b of buildBlocks(tpl, data)) {
+  const blocks = buildBlocks(tpl, data);
+  const numW = Math.max(0, ...blocks.map((x) => (x.kind === "row" && x.cur ? x.value.length : 0)));
+  for (const b of blocks) {
     const el = b.el;
     const big = el.big;
     const width = big ? Math.max(8, Math.floor(cols / 2)) : cols;
@@ -119,7 +121,7 @@ export function layoutReceipt(tpl: ReceiptTemplate, data: ReceiptData, cols: num
         break;
       case "row": {
         const l = tx(b.label);
-        const v = tx(b.value);
+        const v = tx(b.cur ? b.cur + " ".repeat(Math.max(1, numW - b.value.length + 1)) + b.value : b.value);
         // teks 2x yang tidak muat satu baris → turun ke ukuran normal agar tidak terpotong
         if (big && l.length + v.length + 1 > width) {
           twoCol(l, v, cols).forEach((w) => lines.push({ kind: "text", text: w, align: "left", bold, big: false }));

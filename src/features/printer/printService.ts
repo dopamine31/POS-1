@@ -7,6 +7,7 @@ import { effectiveWidthMm, paperWidthMm } from "@/features/receipt-renderer/elem
 import { download } from "@/utils/helpers";
 import { printerManager } from "./printerManager";
 import { printStore } from "./printStore";
+import { renderBitmapEscPos } from "@/features/receipt-renderer/bitmapReceipt";
 
 export const COLS_BY_PAPER: Record<number, number> = { 58: 32, 80: 48 };
 
@@ -16,9 +17,12 @@ function colsOf(p: PrinterSettings) {
 
 export async function sendEscPos(lines: Line[], p: PrinterSettings) {
   const prepared = await prepareImages(lines, p.paperWidth === 58 ? 256 : 384);
-  const one = renderEscPos(prepared, p);
+  await sendBytes(renderEscPos(prepared, p), p);
+}
+
+export async function sendBytes(bytes: Uint8Array, p: PrinterSettings) {
   const copies = Math.max(1, Math.min(p.copies, 5));
-  for (let i = 0; i < copies; i++) await printerManager.send(one);
+  for (let i = 0; i < copies; i++) await printerManager.send(bytes);
 }
 
 export type PrintOutcome = "escpos" | "browser" | "shared" | "pdf";
@@ -27,7 +31,8 @@ export type PrintOutcome = "escpos" | "browser" | "shared" | "pdf";
 export async function printReceipt(tpl: ReceiptTemplate, data: ReceiptData, p: PrinterSettings): Promise<PrintOutcome> {
   if (p.connection === "bluetooth" || p.connection === "usb") {
     if (!printerManager.isConnected(p.connection)) await printerManager.connect(p.connection);
-    await sendEscPos(layoutReceipt(tpl, data, colsOf(p)), p);
+    if (p.printMode === "bitmap") await sendBytes(await renderBitmapEscPos(tpl, data, p), p);
+    else await sendEscPos(layoutReceipt(tpl, data, colsOf(p)), p);
     return "escpos";
   }
   if (p.connection === "share") {
