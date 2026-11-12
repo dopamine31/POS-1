@@ -252,6 +252,7 @@ export interface TemplateElement {
   alignCurrency?: boolean;
   /** elemen items: tampilkan simbol mata uang di harga satuan / jumlah */
   itemCurUnit?: boolean;
+  itemNameBold?: boolean;
   itemCurTotal?: boolean;
   /** teks 2x pada printer thermal */
   big: boolean;

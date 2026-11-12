@@ -54,6 +54,7 @@ function Rule({ el }: { el: TemplateElement }) {
 // NOWRAP_ITEMS: kolom nominal tidak boleh terpecah ke dua baris
 function Items({ el, rows, hasPrice }: { el: TemplateElement; rows: ItemRow[]; hasPrice: boolean }) {
   const st = elStyle(el);
+  const nameStyle = el.itemNameBold ? { fontWeight: 700 } : undefined;
   const qtyUnit = (r: ItemRow) => `${r.qty}${r.unit ? ` x ${r.unit}` : ""}`;
   const noteLine = (r: ItemRow) => (r.note ? <div style={{ fontSize: "0.85em", opacity: 0.75, fontStyle: "italic" }}>↳ {r.note}</div> : null);
   const codeOf = (r: ItemRow) => (r.code ? <span style={{ opacity: 0.7 }}>[{r.code}] </span> : null);
@@ -66,7 +67,7 @@ function Items({ el, rows, hasPrice }: { el: TemplateElement; rows: ItemRow[]; h
             <span>
               {el.showQty && <b>{r.qty}x </b>}
               {codeOf(r)}
-              {r.name}
+              <span style={nameStyle}>{r.name}</span>
             </span>
             {hasPrice && <span style={{ whiteSpace: "nowrap" }}>{r.total}</span>}
           </div>
@@ -78,7 +79,7 @@ function Items({ el, rows, hasPrice }: { el: TemplateElement; rows: ItemRow[]; h
       body = rows.map((r, i) => (
         <div key={i} style={{ display: "flex", gap: 4, justifyContent: "space-between", whiteSpace: "nowrap" }}>
           <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-            {r.name} {el.showQty && <span style={{ opacity: 0.7 }}>×{r.qty}</span>}
+            <span style={nameStyle}>{r.name}</span> {el.showQty && <span style={{ opacity: 0.7 }}>×{r.qty}</span>}
           </span>
           {hasPrice && <span>{r.total}</span>}
         </div>
@@ -100,7 +101,7 @@ function Items({ el, rows, hasPrice }: { el: TemplateElement; rows: ItemRow[]; h
               <tr key={i} style={{ verticalAlign: "top" }}>
                 <td style={{ padding: "2px 4px 2px 0" }}>
                   {codeOf(r)}
-                  {r.name}
+                  <span style={nameStyle}>{r.name}</span>
                   {noteLine(r)}
                 </td>
                 {el.showQty && <td style={{ textAlign: "center" }}>{r.qty}</td>}
@@ -115,7 +116,7 @@ function Items({ el, rows, hasPrice }: { el: TemplateElement; rows: ItemRow[]; h
     case "detailed":
       body = rows.map((r, i) => (
         <div key={i} style={{ borderBottom: "1px solid #bbb", padding: "4px 0" }}>
-          <div style={{ fontWeight: 700 }}>
+          <div style={nameStyle}>
             {i + 1}. {r.name}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9em" }}>
@@ -133,7 +134,7 @@ function Items({ el, rows, hasPrice }: { el: TemplateElement; rows: ItemRow[]; h
     default:
       body = rows.map((r, i) => (
         <div key={i} style={{ marginBottom: 3 }}>
-          <div style={{ fontWeight: 700 }}>
+          <div style={nameStyle}>
             {codeOf(r)}
             {r.name}
           </div>

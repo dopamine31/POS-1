@@ -284,6 +284,7 @@ export function TemplateBuilder({ template, onClose }: { template: ReceiptTempla
                   <Toggle checked={el.showCode} onChange={(v) => set({ showCode: v })} label="Kode item (SKU)" />
                   <Toggle checked={el.showQty} onChange={(v) => set({ showQty: v })} label="Kuantitas" />
                   <Toggle checked={el.showUnitPrice} onChange={(v) => set({ showUnitPrice: v })} label="Harga satuan" />
+                  <Toggle checked={!!el.itemNameBold} onChange={(v) => set({ itemNameBold: v })} label="Nama barang tebal" hint="Hanya nama barang yang tebal. Di cetak teks, layout Satu baris/Ringkas menebalkan seluruh baris (nama + harga)." />
                   <Toggle checked={!!el.itemCurUnit} onChange={(v) => set({ itemCurUnit: v })} label="Simbol mata uang di harga satuan" hint="Contoh: Rp 25.000 (memakan lebih banyak lebar)." />
                   <Toggle checked={!!el.itemCurTotal} onChange={(v) => set({ itemCurTotal: v })} label="Simbol mata uang di jumlah" hint="Contoh: Rp 50.000 di kolom jumlah per baris." />
                   <Toggle checked={el.showNote} onChange={(v) => set({ showNote: v })} label="Catatan item" />

@@ -28,6 +28,7 @@ interface Row {
   cur?: string;
   colW?: number;
   numChars?: number;
+  bold?: boolean;
 }
 
 const BAND = 128;
@@ -119,7 +120,7 @@ function rowOp(st: Style, r: Row, bx: number, bw: number, invert: boolean, align
   return {
     h: st.lh,
     draw: (g, y) => {
-      apply(g, st);
+      apply(g, r.bold ? boldOf(st) : st);
       if (invert) {
         g.fillStyle = "#000";
         g.fillRect(bx, y, bw, st.lh);
@@ -144,6 +145,10 @@ function rowOp(st: Style, r: Row, bx: number, bw: number, invert: boolean, align
   };
 }
 
+function boldOf(st: Style): Style {
+  return { ...st, font: st.font.replace(/(^|\s)[1-9]00(?=\s)/, (_m, p) => p + "700") };
+}
+
 function itemRows(c: Ctx, st: Style, items: ItemRow[], el: TemplateElement, hasPrice: boolean, bw: number, tx: (s: string) => string): Row[] {
   apply(c, st);
   const out: Row[] = [];
@@ -151,6 +156,9 @@ function itemRows(c: Ctx, st: Style, items: ItemRow[], el: TemplateElement, hasP
   const totalW = Math.max(0, ...items.map((r) => c.measureText(r.total).width));
   const ind = c.measureText("   ").width;
   const showQty = el.showQty;
+  const nb = !!el.itemNameBold;
+  const stB: Style = nb ? boldOf(st) : st;
+  const mark = (rs: Row[]): Row[] => (nb ? rs.map((r) => ({ ...r, bold: true })) : rs);
   if (el.itemLayout === "table") {
     out.push(...twoColRows(c, st, "Item", hasPrice ? "Total" : "Qty", bw));
     out.push({ rule: true });
@@ -161,24 +169,28 @@ function itemRows(c: Ctx, st: Style, items: ItemRow[], el: TemplateElement, hasP
     const qtyUnit = `${r.qty}${r.unit ? ` x ${r.unit}` : ""}`;
     switch (el.itemLayout) {
       case "inline":
-        out.push(...twoColRows(c, st, `${showQty ? r.qty + "x " : ""}${code}${name}`, r.total, bw));
+        out.push(...mark(twoColRows(c, stB, `${showQty ? r.qty + "x " : ""}${code}${name}`, r.total, bw)));
         break;
       case "compact":
-        out.push(...twoColRows(c, st, `${name}${showQty ? " x" + r.qty : ""}`, r.total, bw));
+        out.push(...mark(twoColRows(c, stB, `${name}${showQty ? " x" + r.qty : ""}`, r.total, bw)));
         break;
       case "table":
-        wrapPx(c, code + name, bw).forEach((l) => out.push({ left: l }));
+        apply(c, stB);
+        wrapPx(c, code + name, bw).forEach((l) => out.push({ left: l, bold: nb }));
         out.push({ left: showQty ? String(r.qty) : "", mid: r.unit, midEnd: hasPrice ? bw - totalW - gap : bw, right: hasPrice ? r.total : undefined });
         break;
       case "detailed":
-        wrapPx(c, `${idx + 1}. ${name}`, bw).forEach((l) => out.push({ left: l }));
+        apply(c, stB);
+        wrapPx(c, `${idx + 1}. ${name}`, bw).forEach((l) => out.push({ left: l, bold: nb }));
         if (r.code) out.push({ left: "Kode: " + r.code, indent: ind });
         out.push(...twoColRows(c, st, showQty ? "Qty " + qtyUnit : "", r.total, bw, ind));
         break;
       default:
-        wrapPx(c, code + name, bw).forEach((l) => out.push({ left: l }));
+        apply(c, stB);
+        wrapPx(c, code + name, bw).forEach((l) => out.push({ left: l, bold: nb }));
         out.push(...twoColRows(c, st, showQty ? qtyUnit : "", r.total, bw, ind));
     }
+    apply(c, st);
     if (r.note) wrapPx(c, "> " + tx(r.note), bw - ind).forEach((l) => out.push({ left: l, indent: ind }));
   });
   return out;

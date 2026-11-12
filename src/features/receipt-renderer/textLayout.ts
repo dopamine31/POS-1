@@ -66,8 +66,12 @@ export function twoCol(left: string, right: string, width: number): string[] {
 
 const DIV_CHAR: Record<string, string> = { dashed: "-", dotted: ".", solid: "_", double: "=", stars: "*", equals: "=", thick: "=" };
 
-function itemLines(rows: ItemRow[], layout: string, width: number, showQty: boolean, hasPrice: boolean): string[] {
+function itemLines(rows: ItemRow[], layout: string, width: number, showQty: boolean, hasPrice: boolean, boldOut?: Set<number>): string[] {
   const out: string[] = [];
+  const nameOut = (ls: string[]) => {
+    if (boldOut) ls.forEach((_, k) => boldOut.add(out.length + k));
+    out.push(...ls);
+  };
   const totalW = Math.max(0, ...rows.map((r) => r.total.length)) + 1;
   if (layout === "table") out.push(...twoCol("Item", hasPrice ? "Total" : "Qty", width), "-".repeat(width));
   rows.forEach((r, idx) => {
@@ -75,24 +79,24 @@ function itemLines(rows: ItemRow[], layout: string, width: number, showQty: bool
     const qtyUnit = `${r.qty}${r.unit ? ` x ${r.unit}` : ""}`;
     switch (layout) {
       case "inline":
-        out.push(...twoCol(`${showQty ? r.qty + "x " : ""}${code}${r.name}`, r.total, width));
+        nameOut(twoCol(`${showQty ? r.qty + "x " : ""}${code}${r.name}`, r.total, width));
         break;
       case "compact":
-        out.push(...twoCol(`${r.name}${showQty ? " x" + r.qty : ""}`, r.total, width));
+        nameOut(twoCol(`${r.name}${showQty ? " x" + r.qty : ""}`, r.total, width));
         break;
       case "table": {
-        out.push(...wrap(code + r.name, width));
+        nameOut(wrap(code + r.name, width));
         const unitW = Math.max(0, width - 5 - totalW);
         out.push((showQty ? String(r.qty) : "").padEnd(5) + (r.unit || "").padStart(unitW) + (hasPrice ? r.total.padStart(totalW) : ""));
         break;
       }
       case "detailed":
-        out.push(...wrap(`${idx + 1}. ${r.name}`, width));
+        nameOut(wrap(`${idx + 1}. ${r.name}`, width));
         if (r.code) out.push("   Kode: " + r.code);
         out.push(...twoCol(`   ${showQty ? "Qty " + qtyUnit : ""}`, r.total, width));
         break;
       default:
-        out.push(...wrap(code + r.name, width));
+        nameOut(wrap(code + r.name, width));
         out.push(...twoCol(showQty ? `  ${qtyUnit}` : "", r.total, width));
     }
     if (r.note) out.push(...wrap(`  > ${r.note}`, width));
@@ -129,9 +133,12 @@ export function layoutReceipt(tpl: ReceiptTemplate, data: ReceiptData, cols: num
         break;
       }
       case "items":
-        itemLines(b.rows.map((r) => ({ ...r, name: tx(r.name), note: tx(r.note) })), el.itemLayout, cols, el.showQty, b.hasPrice).forEach((t) =>
-          lines.push({ kind: "text", text: toAscii(t), align: "left", bold: false, big: false }),
-        );
+        {
+          const nb = new Set<number>();
+          itemLines(b.rows.map((r) => ({ ...r, name: tx(r.name), note: tx(r.note) })), el.itemLayout, cols, el.showQty, b.hasPrice, el.itemNameBold ? nb : undefined).forEach((t, i) =>
+            lines.push({ kind: "text", text: toAscii(t), align: "left", bold: nb.has(i), big: false }),
+          );
+        }
         break;
       case "divider": {
         const n = Math.max(4, Math.round((cols * el.widthPct) / 100));
