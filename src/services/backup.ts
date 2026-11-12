@@ -77,6 +77,9 @@ export function validateBackup(raw: unknown): { ok: true; backup: BackupFile } |
   return { ok: true, backup: { app: BACKUP_APP, version: b.version, scope, exportedAt: b.exportedAt ?? 0, data: b.data as Record<string, unknown[]> } };
 }
 
+/** Kunci kv milik mesin sinkronisasi: jangan ditimpa saat restore. */
+const PROTECT_KV = ["syncInit", "syncCursor"];
+
 export type RestoreMode = "merge-skip" | "merge-overwrite" | "replace";
 
 /**
@@ -94,9 +97,15 @@ export async function restoreBackup(b: BackupFile, mode: RestoreMode): Promise<{
       const t = tbl(name);
       const rows = b.data[name];
       if (mode === "replace") {
-        await t.clear();
-        await t.bulkPut(rows);
-        added += rows.length;
+        // bulkDelete (bukan clear) agar hook outbox jalan dan penghapusan ikut tersinkron.
+        const kp = t.schema.primKey.keyPath as string;
+        const protect = (k: unknown) => name === "kv" && PROTECT_KV.includes(String(k));
+        const keepRows = (rows as Record<string, unknown>[]).filter((r) => !protect(r[kp]));
+        const incoming = new Set(keepRows.map((r) => r[kp]));
+        const oldKeys = (await t.toCollection().primaryKeys()).filter((k) => !protect(k) && !incoming.has(k));
+        await t.bulkDelete(oldKeys);
+        await t.bulkPut(keepRows);
+        added += keepRows.length;
       } else if (name === "audit") {
         // log audit: tambahkan tanpa id agar tidak bentrok
         await t.bulkAdd(rows.map((r) => ({ ...(r as object), id: undefined })));

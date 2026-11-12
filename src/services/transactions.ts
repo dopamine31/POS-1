@@ -22,9 +22,24 @@ export function cartTotals(cart: Cart, store: Store) {
 async function nextNumber(store: Store, ts: number): Promise<string> {
   const key = `${store.id}:${periodKey(ts, store.resetPeriod)}`;
   const cur = await db.counters.get(key);
-  const seq = (cur?.value ?? 0) + 1;
+  let seq = (cur?.value ?? 0) + 1;
+  let number = formatTxNumber(store.numberFormat, store.prefix, seq, store.seqPad, ts);
+  // Nomor bisa sudah dipakai transaksi dari perangkat lain (hasil sinkronisasi): naikkan sampai bebas.
+  for (let i = 0; i < 1000 && (await numberTaken(store.id, number)); i++) {
+    seq++;
+    number = formatTxNumber(store.numberFormat, store.prefix, seq, store.seqPad, ts);
+  }
   await db.counters.put({ key, value: seq });
-  return formatTxNumber(store.numberFormat, store.prefix, seq, store.seqPad, ts);
+  return number;
+}
+
+async function numberTaken(storeId: string, number: string): Promise<boolean> {
+  const n = await db.transactions
+    .where("number")
+    .equals(number)
+    .filter((t) => t.storeId === storeId)
+    .count();
+  return n > 0;
 }
 
 /**

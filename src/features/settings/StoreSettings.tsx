@@ -22,7 +22,8 @@ function StoreForm() {
   const [s, setS] = useState<Store>(store);
   const set = <K extends keyof Store>(k: K, v: Store[K]) => setS((x) => ({ ...x, [k]: v }));
   const dirty = JSON.stringify(s) !== JSON.stringify(store);
-  const preview = useMemo(() => formatTxNumber(s.numberFormat, s.prefix, 1, s.seqPad, Date.now()), [s.numberFormat, s.prefix, s.seqPad]);
+  const [nowTs] = useState(() => Date.now());
+  const preview = useMemo(() => formatTxNumber(s.numberFormat, s.prefix, 1, s.seqPad, nowTs), [s.numberFormat, s.prefix, s.seqPad, nowTs]);
 
   const save = async () => {
     if (!s.name.trim()) return toast("Nama toko wajib diisi", "error");
