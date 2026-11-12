@@ -12,3 +12,8 @@ next-env.d.ts
 .env
 .env.*
 !.env.example
+.next/
+out/
+node_modules/
+next-env.d.ts
+.env
