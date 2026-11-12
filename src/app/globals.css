@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+/* ───────── Design tokens ───────── */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --line: #e4e7ec;
+  --fg: #0f172a;
+  --muted: #64748b;
+  --brand: #0f766e;
+  --brand-hover: #115e59;
+  --brand-soft: #e6f4f1;
+  --brand-fg: #ffffff;
+  --danger: #dc2626;
+  --danger-soft: #fdecec;
+  --success: #15803d;
+  --success-soft: #e6f5ec;
+  --warning: #b45309;
+  --warning-soft: #fdf3e3;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 24px 60px rgba(16, 24, 40, 0.18);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --bg: #0b0f14;
+  --surface: #131820;
+  --surface-2: #1b222c;
+  --line: #273140;
+  --fg: #e8edf4;
+  --muted: #8b98aa;
+  --brand: #2dd4a7;
+  --brand-hover: #5eead4;
+  --brand-soft: #0f2a26;
+  --brand-fg: #04201a;
+  --danger: #f87171;
+  --danger-soft: #3a1717;
+  --success: #4ade80;
+  --success-soft: #11291a;
+  --warning: #fbbf24;
+  --warning-soft: #33260c;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brandsoft: var(--brand-soft);
+  --color-brandfg: var(--brand-fg);
+  --color-danger: var(--danger);
+  --color-dangersoft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-successsoft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warningsoft: var(--warning-soft);
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+body {
+  min-height: 100dvh;
+  font-size: 15px;
+  line-height: 1.45;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+/* ───────── Components ───────── */
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn {
+    @apply inline-flex min-h-11 select-none items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 text-sm font-medium text-fg transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn:hover {
+    background: var(--surface-2);
+  }
+  .btn-primary {
+    @apply border-transparent bg-brand text-brandfg;
+  }
+  .btn-primary:hover {
+    background: var(--brand-hover);
+  }
+  .btn-danger {
+    @apply border-transparent bg-danger text-white;
+  }
+  .btn-danger:hover {
+    background: var(--danger);
+    filter: brightness(0.92);
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent;
+  }
+  .btn-sm {
+    @apply min-h-9 rounded-lg px-3 text-[13px];
+  }
+  .btn-icon {
+    @apply min-h-10 w-10 px-0;
+  }
+  .input {
+    @apply min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-[15px] text-fg outline-none transition placeholder:text-muted/70;
+  }
+  .input:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-soft);
+  }
+  textarea.input {
+    @apply py-2;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium text-muted;
+  }
+  .chip {
+    @apply inline-flex min-h-9 shrink-0 select-none items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[13px] font-medium text-fg transition;
+  }
+  .chip[data-active="true"] {
+    @apply border-transparent bg-brand text-brandfg;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold;
+  }
+  .badge-ok {
+    @apply bg-successsoft text-success;
+  }
+  .badge-bad {
+    @apply bg-dangersoft text-danger;
+  }
+  .badge-warn {
+    @apply bg-warningsoft text-warning;
+  }
+  .badge-muted {
+    @apply bg-surface2 text-muted;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-xl bg-surface2;
+  }
+  .h-page {
+    @apply text-xl font-semibold tracking-tight;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ───────── Layout helpers ───────── */
+.pb-safe {
+  padding-bottom: var(--safe-bottom);
+}
+.pt-safe {
+  padding-top: var(--safe-top);
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.sheet-enter {
+  animation: sheet-in 0.18s ease-out;
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* ───────── Receipt (screen) ───────── */
+.receipt-paper {
+  background: #fff;
+  color: #000;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  word-break: break-word;
+}
+.receipt-paper * {
+  box-sizing: border-box;
+}
+
+/* ───────── Print ───────── */
+.print-host {
+  display: none;
+}
+@media print {
+  html[data-print="receipt"] .app-shell,
+  html[data-print="receipt"] .no-print-receipt {
+    display: none !important;
+  }
+  html[data-print="receipt"] .print-host {
+    display: block !important;
+  }
+  html[data-print="receipt"] body,
+  html[data-print="receipt"] html {
+    background: #fff !important;
+  }
+  html[data-print="receipt"] .receipt-paper {
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .app-main {
+    padding: 0 !important;
+  }
+}
