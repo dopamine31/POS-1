@@ -27,6 +27,8 @@ export function CartPanel({
   const t = cartTotals(cart, store);
   const qty = (i: number, d: number) =>
     setCart((c) => ({ ...c, items: c.items.map((it, k) => (k === i ? { ...it, qty: Math.max(1, it.qty + d) } : it)) }));
+  const setQtyTo = (i: number, n: number) =>
+    setCart((c) => ({ ...c, items: c.items.map((it, k) => (k === i ? { ...it, qty: n } : it)) }));
   const remove = (i: number) => setCart((c) => ({ ...c, items: c.items.filter((_, k) => k !== i) }));
   const note = async (i: number) => {
     const v = await prompt({ title: "Catatan item", label: cart.items[i].name, initial: cart.items[i].note ?? "", confirmText: "Simpan" });
@@ -55,7 +57,7 @@ export function CartPanel({
                     <button className="grid h-10 w-11 place-items-center active:bg-surface2" onClick={() => (it.qty === 1 ? remove(i) : qty(i, -1))} aria-label="Kurangi">
                       <Minus size={16} />
                     </button>
-                    <span className="num w-9 text-center text-sm font-semibold" aria-label="Kuantitas">{it.qty}</span>
+                    <QtyInput value={it.qty} onCommit={(n) => setQtyTo(i, n)} />
                     <button className="grid h-10 w-11 place-items-center active:bg-surface2" onClick={() => qty(i, 1)} aria-label="Tambah">
                       <Plus size={16} />
                     </button>
@@ -113,6 +115,29 @@ export function CartPanel({
         </div>
       </Modal>
     </div>
+  );
+}
+
+function QtyInput({ value, onCommit }: { value: number; onCommit: (n: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      className="num w-14 bg-transparent text-center text-sm font-semibold outline-none"
+      inputMode="numeric"
+      aria-label="Kuantitas"
+      value={draft ?? String(value)}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => {
+        const d = e.target.value.replace(/\D/g, "").slice(0, 5);
+        setDraft(d);
+        const n = Number(d);
+        if (d && n > 0) onCommit(n);
+      }}
+      onBlur={() => setDraft(null)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+      }}
+    />
   );
 }
 
