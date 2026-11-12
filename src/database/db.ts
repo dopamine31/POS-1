@@ -22,6 +22,16 @@ export interface Counter {
   value: number;
 }
 
+export interface OutboxItem {
+  key: string;
+  tbl: string;
+  id: string;
+  at: number;
+}
+
+/** true saat menerapkan data hasil pull, supaya tidak masuk antrean kirim. */
+export const syncState = { applying: false };
+
 export class PosDB extends Dexie {
   stores!: Table<Store, string>;
   cashiers!: Table<Cashier, string>;
@@ -33,6 +43,7 @@ export class PosDB extends Dexie {
   counters!: Table<Counter, string>;
   audit!: Table<AuditLog, number>;
   kv!: Table<KV, string>;
+  outbox!: Table<OutboxItem, string>;
 
   constructor(name = "pos-receipt-studio") {
     super(name);
@@ -48,6 +59,27 @@ export class PosDB extends Dexie {
       audit: "++id, at, entity",
       kv: "key",
     });
+    this.version(2).stores({ outbox: "key, at" });
+
+    const SYNCED = ["stores", "cashiers", "categories", "products", "transactions", "held", "templates"] as const;
+    for (const name of SYNCED) {
+      const t = this[name] as unknown as Table<{ id: string }, string>;
+      const mark = (id: unknown) => {
+        if (syncState.applying || typeof id !== "string") return;
+        Dexie.ignoreTransaction(() => {
+          this.outbox.put({ key: name + ":" + id, tbl: name, id, at: Date.now() }).catch(() => {});
+        });
+      };
+      t.hook("creating", (_pk, obj) => {
+        mark(obj.id);
+      });
+      t.hook("updating", (_mods, pk) => {
+        mark(pk);
+      });
+      t.hook("deleting", (pk) => {
+        mark(pk);
+      });
+    }
   }
 }
 
@@ -100,8 +132,6 @@ export async function setKV(key: string, value: unknown) {
 
 /** Seed pertama kali: 1 toko, 1 kasir, kategori & produk contoh. */
 export async function seedIfEmpty(): Promise<void> {
-  const count = await db.stores.count();
-  if (count > 0) return;
   const store = newStore();
   const cashier: Cashier = { id: uid(), name: "Kasir 1", active: true, createdAt: Date.now() };
   const cats = ["Minuman", "Makanan", "Snack"].map((name) => ({ id: uid(), storeId: store.id, name }));
@@ -135,6 +165,8 @@ export async function seedIfEmpty(): Promise<void> {
     mk("Kacang Garing", 10000, 2, "SNK-002", "8990000000080", 5000),
   ];
   await db.transaction("rw", [db.stores, db.cashiers, db.categories, db.products, db.kv], async () => {
+    // SEED_GUARD: cek di dalam transaksi supaya pemanggilan ganda tidak membuat toko kembar
+    if ((await db.stores.count()) > 0) return;
     await db.stores.add(store);
     await db.cashiers.add(cashier);
     await db.categories.bulkAdd(cats);

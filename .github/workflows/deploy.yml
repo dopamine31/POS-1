@@ -48,7 +48,12 @@ jobs:
       - name: Build (static export)
         env:
           STATIC_EXPORT: "true"
-        run: npm run build
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_KEY }}
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL" || { echo "Variabel NEXT_PUBLIC_SUPABASE_URL belum diisi di Settings > Variables"; exit 1; }
+          test -n "$NEXT_PUBLIC_SUPABASE_KEY" || { echo "Variabel NEXT_PUBLIC_SUPABASE_KEY belum diisi di Settings > Variables"; exit 1; }
+          npm run build
 
       - name: Verify PWA files in output
         run: |

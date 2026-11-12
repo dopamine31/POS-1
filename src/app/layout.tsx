@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { Providers } from "./providers";
+import { PinGate } from "@/components/PinGate";
 
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <Providers><PinGate>{children}</PinGate></Providers>
       </body>
     </html>
   );
